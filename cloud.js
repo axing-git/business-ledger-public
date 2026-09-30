@@ -1,6 +1,24 @@
 (function(){
   const cfg=window.SUPABASE_CONFIG;
-  const client=window.supabase?.createClient(cfg.url,cfg.anonKey);
+  async function timedFetch(url,options={}){
+    const controller=new AbortController();
+    const abort=()=>controller.abort();
+    if(options.signal?.aborted)abort();
+    options.signal?.addEventListener('abort',abort,{once:true});
+    const timeout=setTimeout(abort,20000);
+    try{return await fetch(url,{...options,signal:controller.signal});}
+    finally{clearTimeout(timeout);options.signal?.removeEventListener('abort',abort);}
+  }
+  const client=window.supabase?.createClient(cfg.url,cfg.anonKey,{global:{fetch:timedFetch}});
+  let sending=false;
+  function loginMessage(text,error=false){const node=el('cloudMessage');node.textContent=text;node.hidden=false;node.dataset.error=String(error);}
+  function loginError(error){
+    const text=error?.message||'未知错误',code=error?.code||'';
+    if(code==='email_address_not_authorized'||/authorized|Email address not allowed/i.test(text))return '邮件服务尚未配置：默认服务只允许向项目成员的邮箱发送。需要配置 SMTP 后才能向其他邮箱发送。';
+    if(/rate|too many/i.test(code+' '+text))return '发送过于频繁，请稍后再试。';
+    if(/fetch|network|abort|timeout/i.test(text)||error?.name==='AbortError')return '连接登录服务失败或超时，请检查网络后重试。';
+    return '发送失败：'+text;
+  }
   let app, user=null, ready=false, revision=null, timer, saving=false, dirty=false, epoch=0;
   const el=id=>document.getElementById(id);
   const empty=()=>({profile:{name:'租号生意账本',year:2026},records:[]});
@@ -55,10 +73,20 @@
       clearTimeout(timer);const {error}=await client.auth.signOut();if(error){app.notify(error.message);return;}await activate(null);close();
     };
     el('cloudForm').onsubmit=async e=>{
-      e.preventDefault();const button=el('cloudSubmit');button.disabled=true;
-      try{const {error}=await client.auth.signInWithOtp({email:el('cloudEmail').value.trim(),options:{emailRedirectTo:location.origin+location.pathname}});if(error)throw error;app.notify('登录链接已发送，请查看邮箱');}catch(error){app.notify(error.message||'发送失败，请重试');}finally{button.disabled=false;}
+      e.preventDefault();if(sending)return;
+      if(!client){loginMessage('登录组件未加载，请刷新页面。',true);return;}
+      sending=true;const button=el('cloudSubmit');button.disabled=true;button.textContent='正在发送…';
+      loginMessage('正在连接登录服务，请稍候…');
+      let notice;
+      try{
+        notice=setTimeout(()=>loginMessage('连接耗时较长，请检查网络；请求仍在处理中。',true),15000);
+        const {error}=await client.auth.signInWithOtp({email:el('cloudEmail').value.trim(),options:{emailRedirectTo:location.origin+location.pathname}});
+        if(error)throw error;
+        loginMessage('登录链接已发送，请检查收件箱和垃圾邮件，并点击邮件中的链接。');
+      }catch(error){loginMessage(loginError(error),true);}
+      finally{clearTimeout(notice);sending=false;button.disabled=false;button.textContent='发送登录链接';}
     };
-    if(!client){status('error','登录组件加载失败，请刷新');el('cloudSubmit').disabled=true;return;}
+    if(!client){status('error','登录组件加载失败，请刷新');loginMessage('登录组件未加载成功，请刷新页面后重试。',true);el('cloudSubmit').disabled=true;return;}
     client.auth.onAuthStateChange((_event,session)=>{setTimeout(()=>activate(session?.user||null),0);});
     try{const {data,error}=await client.auth.getSession();if(error)throw error;await activate(data.session?.user||null);}catch{status('error','登录状态读取失败，请刷新');}
     window.addEventListener('beforeunload',e=>{if(dirty||saving){e.preventDefault();e.returnValue='';}});

@@ -214,6 +214,7 @@
       <form id="cloudForm">
         <div id="cloudSignedOut">
           <label><span>登录邮箱</span><input id="cloudEmail" type="email" autocomplete="email" placeholder="name@example.com" required /></label>
+          <p id="cloudMessage" class="cloud-message" role="status" aria-live="polite" hidden></p>
           <div class="backup-tip"><span>☁</span><p>登录后可恢复原账本的 JSON 备份。每个邮箱拥有独立账本。</p></div>
           <div class="modal-actions"><button type="button" class="secondary-btn" id="cloudCancel">取消</button><button type="submit" class="primary-btn" id="cloudSubmit">发送登录链接</button></div>
         </div>
