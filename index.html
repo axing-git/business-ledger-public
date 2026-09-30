@@ -210,13 +210,17 @@
   </div>
   <div class="modal-backdrop cloud-backdrop" id="cloudBackdrop" aria-hidden="true">
     <section class="modal cloud-modal" role="dialog" aria-modal="true" aria-labelledby="cloudTitle">
-      <div class="modal-head"><div><p>CLOUD SYNC</p><h2 id="cloudTitle">云端同步</h2><span id="cloudDescription">用邮箱登录，让账本在不同设备保持一致。</span></div><button class="close-btn" id="cloudClose" type="button" aria-label="关闭">×</button></div>
+      <div class="modal-head"><div><p>CLOUD SYNC</p><h2 id="cloudTitle">云端同步</h2><span id="cloudDescription">首次注册验证邮箱，之后使用密码登录。</span></div><button class="close-btn" id="cloudClose" type="button" aria-label="关闭">×</button></div>
       <form id="cloudForm">
         <div id="cloudSignedOut">
+          <div class="auth-modes" role="group" aria-label="登录方式"><button type="button" id="authLogin" class="secondary-btn" aria-pressed="true">密码登录</button><button type="button" id="authRegister" class="secondary-btn" aria-pressed="false">注册账号</button></div>
           <label><span>登录邮箱</span><input id="cloudEmail" type="email" autocomplete="email" placeholder="name@example.com" required /></label>
+          <label class="auth-password"><span>密码</span><input id="cloudPassword" type="password" autocomplete="current-password" maxlength="128" required /></label>
+          <label class="auth-password" id="confirmPasswordField" hidden><span>确认密码</span><input id="cloudPasswordConfirm" type="password" autocomplete="new-password" maxlength="128" disabled /></label>
           <p id="cloudMessage" class="cloud-message" role="status" aria-live="polite" hidden></p>
           <div class="backup-tip"><span>☁</span><p>登录后可恢复原账本的 JSON 备份。每个邮箱拥有独立账本。</p></div>
-          <div class="modal-actions"><button type="button" class="secondary-btn" id="cloudCancel">取消</button><button type="submit" class="primary-btn" id="cloudSubmit">发送登录链接</button></div>
+          <button type="button" class="text-btn" id="authResend">重新发送验证邮件</button>
+          <div class="modal-actions"><button type="button" class="secondary-btn" id="cloudCancel">取消</button><button type="submit" class="primary-btn" id="cloudSubmit">登录</button></div>
         </div>
         <div class="cloud-account" id="cloudSignedIn" hidden>
           <span class="cloud-account-mark">✓</span>
