@@ -1,5 +1,7 @@
 (function(){
   const cfg=window.SUPABASE_CONFIG;
+  let recovery=new URLSearchParams(location.search).get('reset')==='1'||new URLSearchParams(location.hash.slice(1)).get('type')==='recovery';
+  let recovering=false;
   async function timedFetch(url,options={}){
     const controller=new AbortController();
     const abort=()=>controller.abort();
@@ -36,8 +38,8 @@
   const draftKey=id=>'ledger-public-draft:'+id;
   function status(kind,text){el('cloudDot').className='cloud-dot '+kind;el('cloudLabel').textContent=text;el('cloudHint').textContent=user?.email||'点击登录';el('saveState').textContent=text;}
   function lock(on){document.querySelector('.workspace').inert=on;['importBtn','settingsBtn','exportBtn','backupBtn'].forEach(id=>el(id).disabled=on);}
-  function modal(){el('cloudSignedOut').hidden=!!user;el('cloudSignedIn').hidden=!user;el('cloudAccountEmail').textContent=user?.email||'';}
-  function close(){el('cloudPassword').value='';el('cloudPasswordConfirm').value='';el('cloudBackdrop').classList.remove('open');el('cloudBackdrop').setAttribute('aria-hidden','true');}
+  function modal(){el('cloudForm').hidden=recovery;el('recoveryForm').hidden=!recovery;el('cloudTitle').textContent=recovery?'设置新密码':'云端同步';el('cloudSignedOut').hidden=!!user;el('cloudSignedIn').hidden=!user;el('cloudAccountEmail').textContent=user?.email||'';}
+  function close(){el('cloudPassword').value='';el('cloudPasswordConfirm').value='';el('recoveryPassword').value='';el('recoveryConfirm').value='';el('cloudBackdrop').classList.remove('open');el('cloudBackdrop').setAttribute('aria-hidden','true');}
   function open(){modal();el('cloudBackdrop').classList.add('open');el('cloudBackdrop').setAttribute('aria-hidden','false');}
   async function activate(next){
     if(next?.id===user?.id)return;
@@ -47,7 +49,7 @@
     try{
       const {data,error}=await client.from('ledgers').select('profile,records,updated_at').eq('user_id',user.id).maybeSingle();
       if(token!==epoch)return;if(error)throw error;
-      revision=data?.updated_at||null;app.replaceData(data||empty());ready=true;lock(false);status('online','已载入云端账本');
+      revision=data?.updated_at||null;app.replaceData(data||empty());ready=true;lock(recovery);status('online',recovery?'请设置新密码':'已载入云端账本');
       const draft=localStorage.getItem(draftKey(user.id));
       if(draft&&confirm('此账号有尚未同步的草稿。是否恢复？取消会保留草稿并显示云端账本。')){app.replaceData(JSON.parse(draft));scheduleSync();}
     }catch(error){if(token===epoch){status('error','加载失败，请重试');app.notify(error.message||'网络连接失败');}}
@@ -76,6 +78,28 @@
     app=ledgerApp;lock(true);status('','请先登录');
     el('cloudBtn').onclick=open;el('cloudClose').onclick=close;el('cloudCancel').onclick=close;
     el('authLogin').onclick=()=>setAuthMode('login');el('authRegister').onclick=()=>setAuthMode('register');
+    el('recoveryBack').onclick=()=>{if(recovering)return;recovery=false;el('recoveryPassword').value='';el('recoveryConfirm').value='';history.replaceState(null,'',location.pathname);modal();lock(!ready);};
+    el('authForgot').onclick=async()=>{
+      if(sending||!client)return;if(!el('cloudEmail').reportValidity())return;
+      sending=true;el('authForgot').disabled=true;el('cloudSubmit').disabled=true;loginMessage('正在发送密码重置邮件…');
+      try{const {error}=await client.auth.resetPasswordForEmail(el('cloudEmail').value.trim(),{redirectTo:location.origin+location.pathname+'?reset=1'});if(error)throw error;loginMessage('如果该邮箱已注册，将收到密码重置邮件。请检查收件箱和垃圾邮件，点击最新邮件中的链接。');}
+      catch(error){loginMessage(loginError(error),true);}
+      finally{sending=false;el('authForgot').disabled=false;el('cloudSubmit').disabled=false;}
+    };
+    el('recoveryForm').onsubmit=async e=>{
+      e.preventDefault();if(recovering||!client)return;
+      const message=el('recoveryMessage'),password=el('recoveryPassword').value;
+      if(password.length<8||password!==el('recoveryConfirm').value){message.textContent='新密码至少 8 位，且两次输入必须一致。';message.dataset.error='true';return;}
+      recovering=true;el('recoverySubmit').disabled=true;message.textContent='正在保存新密码…';
+      try{
+        const {data,error}=await client.auth.getUser();if(error||!data.user)throw new Error('重置链接已失效，请重新申请密码重置邮件。');
+        const updated=await client.auth.updateUser({password});if(updated.error)throw updated.error;
+        el('recoveryPassword').value='';el('recoveryConfirm').value='';recovery=false;
+        const cleanUrl=new URL(location.href);cleanUrl.searchParams.delete('reset');cleanUrl.hash='';history.replaceState(null,'',cleanUrl.pathname+cleanUrl.search);
+        await activate(updated.data.user);modal();lock(!ready);close();app.notify('密码已更新，下次请使用新密码登录');
+      }catch(error){message.textContent=loginError(error);message.dataset.error='true';}
+      finally{recovering=false;el('recoverySubmit').disabled=false;}
+    };
     el('authResend').onclick=async()=>{
       if(sending||!client)return;if(!el('cloudEmail').reportValidity())return;
       sending=true;el('authResend').disabled=true;el('cloudSubmit').disabled=true;loginMessage('正在重新发送验证邮件…');
@@ -110,8 +134,13 @@
       finally{clearTimeout(notice);sending=false;button.disabled=false;button.textContent=authMode==='register'?'注册并发送验证邮件':'登录';}
     };
     if(!client){status('error','登录组件加载失败，请刷新');loginMessage('登录组件未加载成功，请刷新页面后重试。',true);el('cloudSubmit').disabled=true;return;}
-    client.auth.onAuthStateChange((_event,session)=>{setTimeout(()=>activate(session?.user||null),0);});
-    try{const {data,error}=await client.auth.getSession();if(error)throw error;await activate(data.session?.user||null);}catch{status('error','登录状态读取失败，请刷新');}
+    const handleSession=async(event,session)=>{
+      if(event==='PASSWORD_RECOVERY')recovery=true;
+      if(recovery){open();el('recoverySubmit').disabled=!session;el('recoveryMessage').textContent=session?'链接已验证，请输入新密码。':'链接无效或已过期，请关闭此窗口，重新申请密码重置邮件。';}
+      await activate(session?.user||null);
+    };
+    client.auth.onAuthStateChange((event,session)=>{setTimeout(()=>handleSession(event,session),0);});
+    try{const {data,error}=await client.auth.getSession();if(error)throw error;await handleSession('INITIAL_SESSION',data.session);}catch{status('error','登录状态读取失败，请刷新');}
     window.addEventListener('beforeunload',e=>{if(dirty||saving){e.preventDefault();e.returnValue='';}});
   }
   window.ledgerCloud={init,scheduleSync};

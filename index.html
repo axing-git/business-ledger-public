@@ -219,7 +219,7 @@
           <label class="auth-password" id="confirmPasswordField" hidden><span>确认密码</span><input id="cloudPasswordConfirm" type="password" autocomplete="new-password" maxlength="128" disabled /></label>
           <p id="cloudMessage" class="cloud-message" role="status" aria-live="polite" hidden></p>
           <div class="backup-tip"><span>☁</span><p>登录后可恢复原账本的 JSON 备份。每个邮箱拥有独立账本。</p></div>
-          <button type="button" class="text-btn" id="authResend">重新发送验证邮件</button>
+          <div class="auth-modes"><button type="button" class="text-btn" id="authForgot">忘记密码</button><button type="button" class="text-btn" id="authResend">重新发送验证邮件</button></div>
           <div class="modal-actions"><button type="button" class="secondary-btn" id="cloudCancel">取消</button><button type="submit" class="primary-btn" id="cloudSubmit">登录</button></div>
         </div>
         <div class="cloud-account" id="cloudSignedIn" hidden>
@@ -227,6 +227,13 @@
           <div><small>当前账号</small><strong id="cloudAccountEmail">—</strong><p>账本修改后会自动同步，无需手动保存。</p></div>
           <button type="button" class="secondary-btn" id="cloudRetry">重试同步</button><button type="button" class="secondary-btn" id="cloudLogout">退出登录</button>
         </div>
+      </form>
+      <form id="recoveryForm" hidden>
+        <p class="form-hint">设置新的账本密码，至少 8 位。原账号和账目会保留。</p>
+        <label><span>新密码</span><input id="recoveryPassword" type="password" autocomplete="new-password" minlength="8" maxlength="128" required /></label>
+        <label class="auth-password"><span>再次输入新密码</span><input id="recoveryConfirm" type="password" autocomplete="new-password" minlength="8" maxlength="128" required /></label>
+        <p id="recoveryMessage" class="cloud-message" role="status" aria-live="polite">正在验证重置链接…</p>
+        <div class="modal-actions"><button type="button" class="secondary-btn" id="recoveryBack">返回登录</button><button type="submit" class="primary-btn" id="recoverySubmit" disabled>保存新密码</button></div>
       </form>
     </section>
   </div>
