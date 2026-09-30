@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#f5f0e8" />
+  <title>小满账本 · 2026 生意工作台</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <span class="brand-mark">账<i></i></span>
+        <div><strong id="brandName">租号生意账本</strong><span id="brandMeta">DIGITAL BUSINESS · 2026</span></div>
+      </div>
+
+      <nav class="nav-list" aria-label="主导航">
+        <button class="nav-item active" data-view="overview">
+          <svg viewBox="0 0 24 24"><path d="M4 13h6V4H4v9Zm0 7h6v-4H4v4Zm10 0h6v-9h-6v9Zm0-16v4h6V4h-6Z"/></svg>
+          经营总览
+        </button>
+        <button class="nav-item" data-view="records">
+          <svg viewBox="0 0 24 24"><path d="M6 3h12a2 2 0 0 1 2 2v16l-4-2-4 2-4-2-4 2V5a2 2 0 0 1 2-2Zm2 5h8m-8 4h8m-8 4h5"/></svg>
+          历史记录
+          <span class="nav-count" id="recordCount">0</span>
+        </button>
+        <button class="nav-link" data-record-filter="recharge">
+          <svg viewBox="0 0 24 24"><path d="m4 8 8-4 8 4-8 4-8-4Zm0 0v8l8 4 8-4V8"/></svg>
+          库存管理
+        </button>
+        <button class="nav-link" data-record-filter="capital">
+          <svg viewBox="0 0 24 24"><path d="M4 7h16v12H4V7Zm0 4h16m-4 4h1"/></svg>
+          资金流水
+        </button>
+      </nav>
+
+      <div class="sidebar-spacer"></div>
+      <div class="year-stamp"><span>经营年度</span><strong id="yearDisplay">2026</strong></div>
+      <button class="cloud-status" id="cloudBtn" type="button">
+        <span class="cloud-dot" id="cloudDot"></span>
+        <span><strong id="cloudLabel">仅保存在本机</strong><small id="cloudHint">登录后可跨设备同步</small></span>
+      </button>
+      <button class="sidebar-action" id="exportBtn">
+        <svg viewBox="0 0 24 24"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 19h14"/></svg>
+        导出 CSV 表格
+      </button>
+      <button class="sidebar-action" id="backupBtn">
+        <svg viewBox="0 0 24 24"><path d="M12 21V9m0 0 4 4m-4-4-4 4M5 5h14"/></svg>
+        完整备份账本
+      </button>
+      <button class="sidebar-action" id="importBtn">
+        <svg viewBox="0 0 24 24"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 19h14"/></svg>
+        恢复账本备份
+      </button>
+      <button class="sidebar-action" id="settingsBtn">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3A1.7 1.7 0 0 0 10 3V2.8h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"/></svg>
+        账本设置
+      </button>
+      <input type="file" id="importFile" accept="application/json,.json" hidden />
+    </aside>
+
+    <main class="workspace">
+      <header class="topbar">
+        <button class="mobile-menu" id="menuBtn" aria-label="打开菜单">
+          <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+        </button>
+        <div class="breadcrumb"><span id="breadcrumbName">租号生意账本</span><i>/</i><strong id="pageName">经营总览</strong></div>
+        <div class="topbar-actions">
+          <span class="save-state" id="saveState"><i></i>已自动保存</span>
+          <button class="primary-btn" id="addBtn"><span>＋</span> 记一笔</button>
+        </div>
+      </header>
+
+      <section class="view active" id="overviewView">
+        <header class="control-heading reveal">
+          <div><h1>经营总览 <span>✦</span></h1><p><span id="asOfDate">暂无记录</span> · 今天也在稳稳经营</p></div>
+          <div class="status-sticker"><span>GOOD</span><strong>账目状态不错</strong></div>
+        </header>
+
+        <section class="kpi-grid reveal delay-1">
+          <article class="kpi-main"><span>累计净利润</span><strong id="netProfit">¥0.00</strong><p><b id="profitMargin">净利率 0%</b> · <i id="profitStatus">正在计算</i></p><div class="bubble one"></div><div class="bubble two"></div></article>
+          <article class="kpi-card"><span>累计销售收入</span><strong id="totalSales">¥0.00</strong><small id="salesCount">0 次销售结算</small><i class="kpi-icon mint">↗</i></article>
+          <article class="kpi-card"><span>当前经营现金</span><strong id="cashBalance">¥0.00</strong><small>可用于继续经营</small><i class="kpi-icon lilac">¥</i></article>
+          <article class="kpi-card"><span>库存实际成本</span><strong id="stockCost">¥0.00</strong><small id="stockFaceMini">面值 ¥0.00</small><i class="kpi-icon butter">▣</i></article>
+        </section>
+
+        <div class="main-grid reveal delay-2">
+          <section class="surface trend-surface">
+            <div class="surface-head"><div><h2>月度销售额与利润趋势</h2><p>按月汇总，每个节点显示当月具体金额</p></div><div class="legend"><span><i class="sales"></i>月销售额</span><span><i class="profit"></i>月净利润</span></div></div>
+            <div class="chart-wrap" id="trendChart" aria-label="销售额与利润趋势图"></div>
+          </section>
+
+          <aside class="surface inventory-panel">
+            <div class="surface-head"><div><h2>货源库存</h2><p>面值、实际成本与成本率</p></div><span class="tiny-state">当前</span></div>
+            <article class="stock-capsule gj">
+              <div class="stock-title"><span class="stock-icon">管</span><div><strong>租号管家</strong><small>剩余库存面值</small></div></div>
+              <div class="stock-face" id="gjFace">¥0.00</div><div class="stock-meta"><span>实际成本 <b id="gjCost">¥0.00</b></span><strong id="gjRate">0%</strong></div><div class="stock-track"><i id="gjRateBar"></i></div>
+            </article>
+            <article class="stock-capsule yd">
+              <div class="stock-title"><span class="stock-icon">营</span><div><strong>租号营地</strong><small>剩余库存面值</small></div></div>
+              <div class="stock-face" id="ydFace">¥0.00</div><div class="stock-meta"><span>实际成本 <b id="ydCost">¥0.00</b></span><strong id="ydRate">0%</strong></div><div class="stock-track"><i id="ydRateBar"></i></div>
+            </article>
+            <div class="gift-sticker"><span>🎁</span><div>累计获得赠送库存<strong id="giftTotal">¥0.00</strong></div><i>赚到啦</i></div>
+          </aside>
+        </div>
+
+        <div class="bottom-grid reveal delay-3">
+          <section class="surface recent-panel"><div class="surface-head"><div><h2>最近记录</h2><p>修改历史后，所有数据自动重算</p></div><button class="text-btn" data-go-records>查看全部 →</button></div><div id="recentRecords" class="recent-list"></div></section>
+          <section class="surface summary-panel"><div class="surface-head"><div><h2>经营小结</h2><p id="summaryYearLabel">2026 年累计</p></div></div><div class="summary-list"><div><span>老板投入</span><strong id="capitalTotal">¥0.00</strong></div><div><span>累计实付充值</span><strong id="paidTotal">¥0.00</strong></div><div><span>实际销售成本</span><strong id="cogsTotal">¥0.00</strong></div><div><span>运营费用</span><strong id="expenseTotal">¥0.00</strong></div></div><div class="balance-sticker">✓ 当前账目平衡 · 很安心</div></section>
+        </div>
+
+        <div class="calculation-helpers" aria-hidden="true"><span id="retainedProfit"></span><span id="assetTotal"></span><span id="cashPercent"></span><span id="stockPercent"></span><span id="assetDonut"></span></div>
+      </section>
+
+      <section class="view records-view" id="recordsView">
+        <div class="records-heading">
+          <div><p class="eyebrow">EDITABLE HISTORY</p><h1>历史记录</h1><p>可修改或删除任何一笔，后续库存、现金和利润会立即重新计算。</p></div>
+          <div class="records-actions"><button class="secondary-btn" id="resetBtn">清空账本</button><button class="primary-btn" id="addBtn2"><span>＋</span> 新增记录</button></div>
+        </div>
+
+        <div class="filter-bar">
+          <div class="search-box"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><input id="searchInput" placeholder="搜索备注、分类或货源…" /></div>
+          <div class="filter-chips" id="filterChips">
+            <button class="active" data-filter="all">全部</button>
+            <button data-filter="settlement">销售盘点</button>
+            <button data-filter="recharge">库存充值</button>
+            <button data-filter="expense">运营费用</button>
+            <button data-filter="capital">资金</button>
+          </div>
+        </div>
+
+        <div class="records-table-wrap">
+          <table class="records-table">
+            <thead><tr><th>日期</th><th>记录类型</th><th>内容</th><th>现金变动</th><th>库存 / 成本影响</th><th>备注</th><th></th></tr></thead>
+            <tbody id="recordsBody"></tbody>
+          </table>
+          <div class="empty-state" id="emptyState"><strong>没有找到记录</strong><span>换一个关键词或新增一笔记录吧。</span></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="modalBackdrop" aria-hidden="true">
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-head"><div><p id="modalEyebrow">NEW ENTRY</p><h2 id="modalTitle">记一笔</h2></div><button class="close-btn" id="closeModal" aria-label="关闭">×</button></div>
+      <form id="recordForm">
+        <input type="hidden" id="recordId" />
+        <div class="form-grid two">
+          <label><span>记录类型</span><select id="recordType" required>
+            <option value="settlement">销售与库存盘点</option>
+            <option value="recharge">库存充值</option>
+            <option value="expense">运营费用</option>
+            <option value="capital">老板投入</option>
+            <option value="withdrawal">老板取款</option>
+          </select></label>
+          <label><span>日期</span><input type="date" id="recordDate" min="2026-01-01" max="2026-12-31" required /></label>
+        </div>
+
+        <div class="form-section" data-fields="settlement">
+          <div class="form-grid two">
+            <label><span>合计销售收入</span><div class="money-input"><i>¥</i><input type="number" id="sales" min="0" step="0.01" /></div></label>
+            <label><span>退款金额</span><div class="money-input"><i>¥</i><input type="number" id="refund" min="0" step="0.01" value="0" /></div></label>
+          </div>
+          <div class="stock-input-group">
+            <div><span class="source-pill coral">租号管家</span><label><span>当前剩余库存</span><div class="money-input"><i>¥</i><input type="number" id="endGJ" min="0" step="0.01" /></div></label></div>
+            <div><span class="source-pill teal">租号营地</span><label><span>当前剩余库存</span><div class="money-input"><i>¥</i><input type="number" id="endYD" min="0" step="0.01" /></div></label></div>
+          </div>
+          <p class="form-hint">系统会用“盘点前可用库存 − 当前剩余库存”自动反算两个货源的消耗。</p>
+        </div>
+
+        <div class="form-section hidden" data-fields="recharge">
+          <div class="form-grid two">
+            <label><span>货源平台</span><select id="source"><option value="gj">租号管家</option><option value="yd">租号营地</option></select></label>
+            <label><span>资金来源</span><select id="funding"><option>经营资金再投入</option><option>初始本金</option><option>老板追加本金</option></select></label>
+            <label><span>实付充值</span><div class="money-input"><i>¥</i><input type="number" id="paid" min="0" step="0.01" /></div></label>
+            <label><span>赠送库存</span><div class="money-input"><i>¥</i><input type="number" id="gift" min="0" step="0.01" value="0" /></div></label>
+          </div>
+          <p class="form-hint">赠送库存增加面值但不增加成本；充值仅改变现金与库存，不直接减少利润。</p>
+        </div>
+
+        <div class="form-section hidden" data-fields="expense">
+          <div class="form-grid two">
+            <label><span>费用分类</span><select id="expenseCategory"><option>软件服务费</option><option>推广费用</option><option>售后赔付</option><option>其他运营费用</option></select></label>
+            <label><span>费用金额</span><div class="money-input"><i>¥</i><input type="number" id="expenseAmount" min="0" step="0.01" /></div></label>
+          </div>
+        </div>
+
+        <div class="form-section hidden" data-fields="capital withdrawal">
+          <label><span id="fundAmountLabel">金额</span><div class="money-input"><i>¥</i><input type="number" id="fundAmount" min="0" step="0.01" /></div></label>
+        </div>
+
+        <label class="note-field"><span>备注（选填）</span><textarea id="note" rows="2" placeholder="写下这笔记录的说明…"></textarea></label>
+        <div class="modal-actions"><button type="button" class="secondary-btn" id="cancelModal">取消</button><button type="submit" class="primary-btn">保存并重新计算</button></div>
+      </form>
+    </section>
+  </div>
+  <div class="modal-backdrop settings-backdrop" id="settingsBackdrop" aria-hidden="true">
+    <section class="modal settings-modal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+      <div class="modal-head"><div><p>LEDGER SETTINGS</p><h2 id="settingsTitle">账本设置</h2><span>修改名称或经营年份，不会清空历史记录。</span></div><button class="close-btn" id="settingsClose" type="button" aria-label="关闭">×</button></div>
+      <form id="settingsForm">
+        <div class="form-grid two">
+          <label><span>账本名称</span><input id="settingsName" maxlength="24" required /></label>
+          <label><span>经营年份</span><input id="settingsYear" type="number" min="2000" max="2100" required /></label>
+        </div>
+        <div class="backup-tip"><span>☁</span><p>经营数据保存在当前浏览器中，建议修改设置前先导出一份完整备份。</p></div>
+        <div class="modal-actions"><button type="button" class="secondary-btn" id="settingsCancel">取消</button><button type="submit" class="primary-btn">保存设置</button></div>
+      </form>
+    </section>
+  </div>
+  <div class="modal-backdrop cloud-backdrop" id="cloudBackdrop" aria-hidden="true">
+    <section class="modal cloud-modal" role="dialog" aria-modal="true" aria-labelledby="cloudTitle">
+      <div class="modal-head"><div><p>CLOUD SYNC</p><h2 id="cloudTitle">云端同步</h2><span id="cloudDescription">用邮箱登录，让账本在不同设备保持一致。</span></div><button class="close-btn" id="cloudClose" type="button" aria-label="关闭">×</button></div>
+      <form id="cloudForm">
+        <div id="cloudSignedOut">
+          <label><span>登录邮箱</span><input id="cloudEmail" type="email" autocomplete="email" placeholder="name@example.com" required /></label>
+          <div class="backup-tip"><span>☁</span><p>登录后可恢复原账本的 JSON 备份。每个邮箱拥有独立账本。</p></div>
+          <div class="modal-actions"><button type="button" class="secondary-btn" id="cloudCancel">取消</button><button type="submit" class="primary-btn" id="cloudSubmit">发送登录链接</button></div>
+        </div>
+        <div class="cloud-account" id="cloudSignedIn" hidden>
+          <span class="cloud-account-mark">✓</span>
+          <div><small>当前账号</small><strong id="cloudAccountEmail">—</strong><p>账本修改后会自动同步，无需手动保存。</p></div>
+          <button type="button" class="secondary-btn" id="cloudRetry">重试同步</button><button type="button" class="secondary-btn" id="cloudLogout">退出登录</button>
+        </div>
+      </form>
+    </section>
+  </div>
+  <div class="toast" id="toast"><span>✓</span><p>已保存，账本已重新计算</p></div>
+  <script src="supabase-config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2"></script>
+  <script src="cloud.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
