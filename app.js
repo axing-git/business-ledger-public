@@ -97,8 +97,10 @@ function calculate(){
   return {state,snapshots,monthly};
 }
 
+let latestSnapshots=[];
 function render(){
   const result=calculate(), s=result.state;
+  latestSnapshots=result.snapshots;
   setText('netProfit',money(s.netProfit)); setText('totalSales',money(s.sales)); setText('cashBalance',money(s.cash));
   setText('stockCost',money(s.stockCost)); setText('stockFaceMini',`面值 ${money(s.stockFace)}`); setText('salesCount',`${s.settlements} 次销售结算`);
   setText('profitMargin',`净利率 ${s.sales?percent(s.netProfit/s.sales):'0%'}`); setText('profitStatus',s.netProfit>=0?'经营盈利':'尚未盈利');
@@ -160,10 +162,23 @@ function renderRecords(snapshots){
   byId('emptyState').classList.toggle('show',!filtered.length);
 }
 
+function setMenu(open){
+  const mobile=window.matchMedia('(max-width:760px)').matches;
+  open=mobile&&open;
+  byId('sidebar').classList.toggle('open',open);
+  byId('sidebar').inert=mobile&&!open;
+  byId('menuScrim').classList.toggle('open',open);
+  byId('menuBtn').setAttribute('aria-expanded',String(open));
+  byId('menuBtn').setAttribute('aria-label',open?'关闭菜单':'打开菜单');
+  if(open)byId('menuClose').focus({preventScroll:true});
+  else if(mobile&&byId('sidebar').contains(document.activeElement))byId('menuBtn').focus({preventScroll:true});
+}
 function setView(view){
+  setMenu(false);
+  if(view===currentView)return;
   currentView=view; document.querySelectorAll('.view').forEach(v=>v.classList.remove('active')); document.querySelectorAll('.nav-item').forEach(v=>v.classList.remove('active'));
   byId(view==='overview'?'overviewView':'recordsView').classList.add('active'); document.querySelector(`[data-view="${view}"]`).classList.add('active');
-  setText('pageName',view==='overview'?'经营总览':'历史记录'); byId('sidebar').classList.remove('open'); window.scrollTo({top:0,behavior:'smooth'});
+  setText('pageName',view==='overview'?'经营总览':'历史记录'); window.scrollTo({top:0,behavior:'instant'});
 }
 function openModal(id=null){
   byId('recordForm').reset(); byId('recordId').value=''; byId('recordDate').value=defaultRecordDate(); byId('refund').value=0; byId('gift').value=0;
@@ -200,16 +215,23 @@ function exportCSV(){
 }
 
 document.querySelectorAll('.nav-item').forEach(b=>b.addEventListener('click',()=>setView(b.dataset.view)));
-document.querySelectorAll('[data-record-filter]').forEach(b=>b.addEventListener('click',()=>{setView('records');activeFilter=b.dataset.recordFilter;document.querySelectorAll('#filterChips button').forEach(x=>x.classList.toggle('active',x.dataset.filter===activeFilter));render();}));
+document.querySelectorAll('[data-record-filter]').forEach(b=>b.addEventListener('click',()=>{setView('records');activeFilter=b.dataset.recordFilter;document.querySelectorAll('#filterChips button').forEach(x=>x.classList.toggle('active',x.dataset.filter===activeFilter));renderRecords(latestSnapshots);}));
 document.querySelectorAll('[data-go-records]').forEach(b=>b.addEventListener('click',()=>setView('records')));
 byId('addBtn').addEventListener('click',()=>openModal()); byId('addBtn2').addEventListener('click',()=>openModal()); byId('closeModal').addEventListener('click',closeModal); byId('cancelModal').addEventListener('click',closeModal);
 byId('modalBackdrop').addEventListener('click',e=>{if(e.target===byId('modalBackdrop'))closeModal()}); byId('recordType').addEventListener('change',updateFormFields); byId('recordForm').addEventListener('submit',submitRecord);
 byId('recordsBody').addEventListener('click',e=>{const edit=e.target.closest('[data-edit]'),del=e.target.closest('[data-delete]');if(edit)openModal(edit.dataset.edit);if(del)deleteRecord(del.dataset.delete);});
-byId('searchInput').addEventListener('input',render); byId('filterChips').addEventListener('click',e=>{const b=e.target.closest('[data-filter]');if(!b)return;activeFilter=b.dataset.filter;document.querySelectorAll('#filterChips button').forEach(x=>x.classList.toggle('active',x===b));render();});
+let searchTimer;
+byId('searchInput').addEventListener('input',()=>{clearTimeout(searchTimer);searchTimer=setTimeout(()=>renderRecords(latestSnapshots),100);}); byId('filterChips').addEventListener('click',e=>{const b=e.target.closest('[data-filter]');if(!b)return;activeFilter=b.dataset.filter;document.querySelectorAll('#filterChips button').forEach(x=>x.classList.toggle('active',x===b));renderRecords(latestSnapshots);});
 byId('resetBtn').addEventListener('click',()=>{if(confirm('确定清空当前账号的账本吗？\n全部记录将被删除，建议先导出完整备份。')){records=structuredClone(defaultRecords).map(r=>({...r,date:`${profile.year}${r.date.slice(4)}`}));saveRecords();render();showToast('已清空账本');}});
 byId('exportBtn').addEventListener('click',exportCSV); byId('backupBtn').addEventListener('click',exportBackup); byId('importBtn').addEventListener('click',()=>byId('importFile').click()); byId('importFile').addEventListener('change',e=>{if(e.target.files?.[0])importBackup(e.target.files[0]);}); byId('settingsBtn').addEventListener('click',openSettings);
 byId('settingsForm').addEventListener('submit',submitSettings); byId('settingsClose').addEventListener('click',closeSettings); byId('settingsCancel').addEventListener('click',closeSettings); byId('settingsBackdrop').addEventListener('click',e=>{if(e.target===byId('settingsBackdrop'))closeSettings();});
-byId('menuBtn').addEventListener('click',()=>byId('sidebar').classList.toggle('open')); document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();closeSettings();}});
+byId('menuBtn').addEventListener('click',()=>setMenu(!byId('sidebar').classList.contains('open')));
+byId('menuClose').addEventListener('click',()=>setMenu(false));
+byId('menuScrim').addEventListener('click',()=>setMenu(false));
+byId('sidebar').addEventListener('click',e=>{if(e.target.closest('.sidebar-action,.cloud-status'))setMenu(false);});
+window.matchMedia('(max-width:760px)').addEventListener('change',()=>setMenu(false));
+setMenu(false);
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){setMenu(false);closeModal();closeSettings();}});
 function validateLedger(data){
   if(!data?.profile||typeof data.profile.name!=='string'||!Number.isInteger(Number(data.profile.year))||Number(data.profile.year)<2000||Number(data.profile.year)>2100||!Array.isArray(data.records))throw new Error('账本格式无效');
   const ids=new Set();

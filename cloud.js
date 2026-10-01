@@ -37,7 +37,11 @@
   const empty=()=>({profile:{name:'租号生意账本',year:2026},records:[]});
   const draftKey=id=>'ledger-public-draft:'+id;
   function status(kind,text){el('cloudDot').className='cloud-dot '+kind;el('cloudLabel').textContent=text;el('cloudHint').textContent=user?.email||'点击登录';el('saveState').textContent=text;}
-  function lock(on){document.querySelector('.workspace').inert=on;['importBtn','settingsBtn','exportBtn','backupBtn'].forEach(id=>el(id).disabled=on);}
+  function lock(on){
+    // Keep navigation and the cloud login entry reachable while data is locked.
+    ['overviewView','recordsView'].forEach(id=>el(id).inert=on);
+    ['addBtn','importBtn','settingsBtn','exportBtn','backupBtn'].forEach(id=>el(id).disabled=on);
+  }
   function modal(){el('cloudForm').hidden=recovery;el('recoveryForm').hidden=!recovery;el('cloudTitle').textContent=recovery?'设置新密码':'云端同步';el('cloudSignedOut').hidden=!!user;el('cloudSignedIn').hidden=!user;el('cloudAccountEmail').textContent=user?.email||'';}
   function close(){el('cloudPassword').value='';el('cloudPasswordConfirm').value='';el('recoveryPassword').value='';el('recoveryConfirm').value='';el('cloudBackdrop').classList.remove('open');el('cloudBackdrop').setAttribute('aria-hidden','true');}
   function open(){modal();el('cloudBackdrop').classList.add('open');el('cloudBackdrop').setAttribute('aria-hidden','false');}

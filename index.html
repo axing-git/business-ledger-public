@@ -10,6 +10,7 @@
 <body>
   <div class="app-shell">
     <aside class="sidebar" id="sidebar">
+      <button type="button" class="menu-close" id="menuClose" aria-label="关闭菜单">×</button>
       <div class="brand">
         <span class="brand-mark">账<i></i></span>
         <div><strong id="brandName">租号生意账本</strong><span id="brandMeta">DIGITAL BUSINESS · 2026</span></div>
@@ -59,10 +60,11 @@
       </button>
       <input type="file" id="importFile" accept="application/json,.json" hidden />
     </aside>
+    <button type="button" class="menu-scrim" id="menuScrim" aria-label="关闭菜单" tabindex="-1"></button>
 
     <main class="workspace">
       <header class="topbar">
-        <button class="mobile-menu" id="menuBtn" aria-label="打开菜单">
+        <button type="button" class="mobile-menu" id="menuBtn" aria-label="打开菜单" aria-controls="sidebar" aria-expanded="false">
           <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
         </button>
         <div class="breadcrumb"><span id="breadcrumbName">租号生意账本</span><i>/</i><strong id="pageName">经营总览</strong></div>
