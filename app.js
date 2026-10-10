@@ -182,6 +182,11 @@ function setView(view){
 }
 function openModal(id=null){
   byId('recordForm').reset(); byId('recordId').value=''; byId('recordDate').value=defaultRecordDate(); byId('refund').value=0; byId('gift').value=0;
+  if(!id){
+    const stock=calculate().state.stock;
+    byId('endGJ').value=stock.gj.face.toFixed(2);
+    byId('endYD').value=stock.yd.face.toFixed(2);
+  }
   if(id){
     const r=records.find(x=>x.id===id); if(!r)return; byId('recordId').value=r.id; byId('recordType').value=r.type; byId('recordDate').value=r.date; byId('note').value=r.note||'';
     if(r.type==='settlement'){byId('sales').value=r.sales;byId('refund').value=r.refund;byId('endGJ').value=r.endGJ;byId('endYD').value=r.endYD;}
